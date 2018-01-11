@@ -232,7 +232,7 @@ public class CreatRecord {
         byte[] orderStamp = new byte[4];
         System.out.println("4 " + orderStamp.length);
         //获取时间节点
-        byte[] time = intToByte(getUnixTime());
+        byte[] time = intToByte(getNTPtime());
         System.out.println("4 " + time.length);
         //生成锁定脚本
         byte[] lockScript = getLockScript(publicKey);

@@ -28,6 +28,8 @@ public class powModule {
         System.arraycopy(merkle,0,tem,lashHash.length,merkle.length);
         System.arraycopy(cumulativeDiff,0,tem,lashHash.length+merkle.length,cumulativeDiff.length);
         tem[lashHash.length+merkle.length+cumulativeDiff.length+4]=difficulty;//+4 为后面的4字节time字段
+        int unixTimeStart=getUnixTime();
+        int NTPTimeStart=getNTPtime();
         for (int i=0;true;i++){
             if (interupt){
                 Thread.currentThread().interrupt();
@@ -37,7 +39,7 @@ public class powModule {
             }
             if (i==Integer.MAX_VALUE)
                 i=0;
-            byte[]time=intToByte(getUnixTime());
+            byte[]time=intToByte(NTPTimeStart+(getUnixTime()-unixTimeStart));
             byte[]nonce=intToByte(i);
             System.arraycopy(time,0,tem,lashHash.length+merkle.length+cumulativeDiff.length,time.length);
             System.arraycopy(nonce,0,tem,lashHash.length+merkle.length+cumulativeDiff.length+time.length+1,nonce.length);//+1 为上面diffculty的一字节字段

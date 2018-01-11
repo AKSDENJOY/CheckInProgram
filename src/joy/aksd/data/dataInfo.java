@@ -1,13 +1,15 @@
 package joy.aksd.data;
 
+import org.apache.commons.net.ntp.NTPUDPClient;
+import org.apache.commons.net.ntp.TimeInfo;
+import org.apache.commons.net.ntp.TimeStamp;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -137,6 +139,21 @@ public class dataInfo {
 
     public static int getUnixTime(){
         return (int) (System.currentTimeMillis()/1000);
+    }
+    public static int getNTPtime(){
+        Date date=null;
+        try {
+            NTPUDPClient timeClient = new NTPUDPClient();
+            String timeServerURL = "202.120.2.101";
+            InetAddress timeServerAddress = InetAddress.getByName(timeServerURL);
+            TimeInfo timeInfo = timeClient.getTime(timeServerAddress);
+            TimeStamp timestamp = timeInfo.getMessage().getTransmitTimeStamp();
+            date = timestamp.getDate();
+        }catch (Exception e){
+            System.out.println("get NTPtime error System shutDown");
+            System.exit(1);
+        }
+        return (int) (date.getTime() / 1000);
     }
 
     public static void interuptCoreThread(){
