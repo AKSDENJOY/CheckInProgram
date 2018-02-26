@@ -563,7 +563,7 @@ class handleThread implements Runnable {
         }else {
             Record record = freshRecord.get(key);
             out.write(record.getOrderStamp());
-            out.write(intToByte(getNTPtime()));
+            out.write(intToByte(getTime()));
         }
     }
 

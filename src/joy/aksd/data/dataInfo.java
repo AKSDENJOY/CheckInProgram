@@ -88,6 +88,11 @@ public class dataInfo {
      * 期待的块号
      */
     public static int num=0;
+    /**
+     * NTP时间
+     */
+    public static int NTPTime;
+    public static int localTimeInStart;
 
     public static final String ECNAME="secp160r1";
 
@@ -101,13 +106,21 @@ public class dataInfo {
     static {
         try {
             setIP();
+            setNTPtimeAndLocalTime();
         } catch (IOException e) {
             System.out.println("IP设置error");
             System.exit(1);
         }
     }
 
+    private static void setNTPtimeAndLocalTime() {
+        System.out.println("set ntptime");
+        NTPTime=getNTPtime();
+        localTimeInStart = getSystemTime();
+    }
+
     private static void setIP() throws IOException {
+        System.out.println("set ip");
         BufferedReader reader=new BufferedReader(new FileReader(IPLOCATION));
         String IP=reader.readLine();
         ArrayList<String> ipList=new ArrayList<>();
@@ -136,15 +149,21 @@ public class dataInfo {
         return true;
     }
 
+    public static int getTime(){
+        int systemTimeNow=getSystemTime();
+        return systemTimeNow- localTimeInStart+NTPTime;
+    }
 
-    public static int getUnixTime(){
+
+    public static int getSystemTime(){
         return (int) (System.currentTimeMillis()/1000);
     }
     public static int getNTPtime(){
+        System.out.println("get ntp time");
         Date date=null;
         try {
             NTPUDPClient timeClient = new NTPUDPClient();
-            String timeServerURL = "202.120.2.101";
+            String timeServerURL = "s1a.time.edu.cn";
             InetAddress timeServerAddress = InetAddress.getByName(timeServerURL);
             TimeInfo timeInfo = timeClient.getTime(timeServerAddress);
             TimeStamp timestamp = timeInfo.getMessage().getTransmitTimeStamp();

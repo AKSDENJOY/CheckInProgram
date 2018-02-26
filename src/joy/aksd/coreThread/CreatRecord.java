@@ -68,7 +68,7 @@ public class CreatRecord {
         //获取时间节点
         byte []time=new byte[4];
         System.arraycopy(orderStampAndTime,4,time,0,4);
-//        byte[] time = intToByte(getUnixTime());
+//        byte[] time = intToByte(getSystemTime());
         System.out.println("4 " + time.length);
         if (Arrays.equals(time,new byte[4])) {
             System.out.println("not exist");
@@ -232,7 +232,7 @@ public class CreatRecord {
         byte[] orderStamp = new byte[4];
         System.out.println("4 " + orderStamp.length);
         //获取时间节点
-        byte[] time = intToByte(getNTPtime());
+        byte[] time = intToByte(getTime());
         System.out.println("4 " + time.length);
         //生成锁定脚本
         byte[] lockScript = getLockScript(publicKey);
