@@ -6,9 +6,10 @@ import java.io.*;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Scanner;
 
-import static joy.aksd.data.dataInfo.PORT;
-import static joy.aksd.data.dataInfo.ROOTIP;
+//import static joy.aksd.data.dataInfo.PORT;
+//import static joy.aksd.data.dataInfo.ROOTIP;
 import static joy.aksd.data.protocolInfo.SELFQUERY;
 import static joy.aksd.tools.readAndPrintData.printRecord;
 import static joy.aksd.tools.toByte.hexStringToByteArray;
@@ -18,6 +19,21 @@ import static joy.aksd.tools.toInt.byteToInt;
  * Created by EnjoyD on 2017/5/15.
  */
 public class querySelfRecord {
+
+    private static String ip;
+    private static int port=49999;
+    static {
+        Scanner sc= null;
+        try {
+            sc = new Scanner(new File("./ip.txt"));
+        } catch (FileNotFoundException e) {
+            System.out.println("error in set ip");
+        }
+        String tem=sc.nextLine().trim();
+        sc.close();
+        ip=tem;
+        System.out.println(ip);
+    }
 
     public void querySelfRecord(){
         //get lockScript
@@ -39,7 +55,7 @@ public class querySelfRecord {
     }
 
     private void startQuery(byte[] lockScript) throws IOException {
-        Socket socket=new Socket(ROOTIP,PORT);
+        Socket socket=new Socket(ip,port);
         InputStream in=socket.getInputStream();
         OutputStream out=socket.getOutputStream();
         out.write(SELFQUERY);

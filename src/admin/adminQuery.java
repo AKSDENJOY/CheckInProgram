@@ -6,8 +6,8 @@ import java.io.*;
 import java.net.Socket;
 import java.util.*;
 
-import static joy.aksd.data.dataInfo.PORT;
-import static joy.aksd.data.dataInfo.ROOTIP;
+//import static joy.aksd.data.dataInfo.PORT;
+//import static joy.aksd.data.dataInfo.ROOTIP;
 import static joy.aksd.data.protocolInfo.ADMINQUERY;
 import static joy.aksd.tools.readAndPrintData.printRecord;
 import static joy.aksd.tools.toInt.byteToInt;
@@ -18,6 +18,20 @@ import static joy.aksd.tools.toString.byteToString;
  */
 public class adminQuery {
     private HashMap<String,String> lockSriptToName=new HashMap<>();
+    private static String ip;
+    private static int port=49999;
+    static {
+        Scanner sc= null;
+        try {
+            sc = new Scanner(new File("./ip.txt"));
+        } catch (FileNotFoundException e) {
+            System.out.println("error in set ip");
+        }
+        String tem=sc.nextLine().trim();
+        sc.close();
+        ip=tem;
+        System.out.println(ip);
+    }
 
     public void start(){
         try {
@@ -28,7 +42,7 @@ public class adminQuery {
         Socket socket= null;
         ArrayList<Record> result=new ArrayList<>();
         try {
-            socket = new Socket(ROOTIP,PORT);
+            socket = new Socket(ip,port);
             InputStream in=socket.getInputStream();
             OutputStream out=socket.getOutputStream();
             out.write(ADMINQUERY);

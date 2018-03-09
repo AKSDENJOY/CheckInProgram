@@ -1,10 +1,12 @@
 package joy.aksd.data;
 
+import joy.aksd.tools.getNTP;
 import org.apache.commons.net.ntp.NTPUDPClient;
 import org.apache.commons.net.ntp.TimeInfo;
 import org.apache.commons.net.ntp.TimeStamp;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -115,7 +117,13 @@ public class dataInfo {
 
     private static void setNTPtimeAndLocalTime() {
         System.out.println("set ntptime");
-        NTPTime=getNTPtime();
+        try {
+            NTPTime= getNTP.start();
+        } catch (Exception e) {
+            System.out.println("error in get NTP time");
+            System.exit(1);
+        }
+        System.out.println(NTPTime);
         localTimeInStart = getSystemTime();
     }
 
@@ -158,22 +166,25 @@ public class dataInfo {
     public static int getSystemTime(){
         return (int) (System.currentTimeMillis()/1000);
     }
-    public static int getNTPtime(){
-        System.out.println("get ntp time");
-        Date date=null;
-        try {
-            NTPUDPClient timeClient = new NTPUDPClient();
-            String timeServerURL = "s1a.time.edu.cn";
-            InetAddress timeServerAddress = InetAddress.getByName(timeServerURL);
-            TimeInfo timeInfo = timeClient.getTime(timeServerAddress);
-            TimeStamp timestamp = timeInfo.getMessage().getTransmitTimeStamp();
-            date = timestamp.getDate();
-        }catch (Exception e){
-            System.out.println("get NTPtime error System shutDown");
-            System.exit(1);
-        }
-        return (int) (date.getTime() / 1000);
-    }
+
+//该方法不能频繁回去ntp时间，因此改用另一种方法
+
+//    public static int getNTPtime(){
+//        System.out.println("get ntp time");
+//        Date date=null;
+//        try {
+//            NTPUDPClient timeClient = new NTPUDPClient();
+//            String timeServerURL = "s1a.time.edu.cn";
+//            InetAddress timeServerAddress = InetAddress.getByName(timeServerURL);
+//            TimeInfo timeInfo = timeClient.getTime(timeServerAddress);
+//            TimeStamp timestamp = timeInfo.getMessage().getTransmitTimeStamp();
+//            date = timestamp.getDate();
+//        }catch (Exception e){
+//            System.out.println("get NTPtime error System shutDown");
+//            System.exit(1);
+//        }
+//        return (int) (date.getTime() / 1000);
+//    }
 
     public static void interuptCoreThread(){
         interupt=true;
