@@ -51,22 +51,10 @@ public class adminQuery {
             OutputStream out=socket.getOutputStream();
             out.write(ADMINQUERY);
             try {
-                while (true) {
-                    byte[] tem = new byte[2];
-                    int i=in.read(tem);
-                    if (i==0)
-                        break;
-                    tem = new byte[byteToInt(tem)];
-                    i=in.read(tem);
-                    Record record=new Record(tem);
-                    printRecord(record);
-                    String key=byteToString(record.getLockScript());
-                    System.out.println("lockScrpit: "+ key);
-                    result.add(record);
-                }
+                receiveRecord(result,in);
             }catch (Exception e){
-                System.out.println("receive over");
-
+                e.printStackTrace();
+                System.out.println("receive exception");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -81,6 +69,42 @@ public class adminQuery {
         }
         System.out.println("search over");
         startClassifySearch(result);
+    }
+
+    private void receiveRecord(ArrayList<Record> result, InputStream in) throws IOException {
+        byte []buff=new byte[1024];
+        byte []tem;
+        int AllLength=0;
+        ArrayList<byte[]> Allbytes=new ArrayList<>();
+        int count=0;
+        while ((count=in.read(buff))!=-1){
+            tem=new byte[count];
+            System.arraycopy(buff,0,tem,0,tem.length);
+            Allbytes.add(tem);
+            AllLength+=count;
+        }
+        System.out.println("receive finish");
+        byte []all=new byte[AllLength];
+        count=0;
+        for (byte[] item:Allbytes){
+            System.arraycopy(item,0,all,count,item.length);
+            count+=item.length;
+        }
+        count=0;
+        byte []recordLength=new byte[2];
+        byte []data;
+        System.out.println("start parse received info");
+        while (count<all.length){
+            System.arraycopy(all,count,recordLength,0,recordLength.length);
+            int length=byteToInt(recordLength);
+            count+=recordLength.length;
+            data=new byte[length];
+            System.arraycopy(all,count,data,0,data.length);
+            count+=data.length;
+            Record r=new Record(data);
+            result.add(r);
+            System.out.println(r.toString());
+        }
     }
 
 
@@ -185,11 +209,11 @@ public class adminQuery {
     }
 
     private void initName() throws IOException {
-        DataInputStream in=new DataInputStream(new FileInputStream("./adminName"));
+        Scanner in=new Scanner(new FileInputStream("./adminName"));
         while (true){
             try {
-                String lockScript=in.readLine();//windows下可以正常使用，linux下未知
-                String name=in.readLine();
+                String lockScript=in.nextLine();
+                String name=in.nextLine();
                 if (lockScript==null)
                     break;
                 this.lockSriptToName.put(lockScript,name);
