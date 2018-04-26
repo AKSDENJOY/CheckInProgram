@@ -28,7 +28,6 @@ public class DownLoadBlocks {
                 e1.printStackTrace();
             }
             return;
-
         }
 
 
@@ -49,6 +48,8 @@ public class DownLoadBlocks {
                 e.printStackTrace();
             }
         }
+        System.out.println("finish");
+        System.exit(0);
     }
 
 

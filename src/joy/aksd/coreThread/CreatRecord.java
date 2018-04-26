@@ -17,20 +17,23 @@ import static joy.aksd.data.dataInfo.*;
 import static joy.aksd.data.protocolInfo.QUERYSTAMPANDTIME;
 import static joy.aksd.data.protocolInfo.RECIVERECORD;
 import static joy.aksd.tools.toByte.hexStringToByteArray;
+import static joy.aksd.tools.toByte.intTo3Byte;
 import static joy.aksd.tools.toByte.intToByte;
 import static joy.aksd.tools.toInt.byteToInt;
+import static joy.aksd.tools.toString.byteToString;
 
 /**
  * Created by EnjoyD on 2017/4/25.
  */
 public class CreatRecord {
-    public void start() {
+    public void start(int i,String path) {
 
+        System.out.println("--------------------------");
         //找到自己的公私秘钥
         ECPublicKeyImpl publicKey = null;
         ECPrivateKeyImpl privateKey = null;
         try {
-            KeyPair keyPair = getKeyPair();
+            KeyPair keyPair = getKeyPair(path);
             publicKey = (ECPublicKeyImpl) keyPair.getPublic();
             privateKey = (ECPrivateKeyImpl) keyPair.getPrivate();
         } catch (Exception e) {
@@ -43,7 +46,7 @@ public class CreatRecord {
             System.out.println("mac 获取错误");
             macAddress=new byte[6];
         }
-        System.out.println(macAddress.length);
+        System.out.println("mac is:"+byteToString(macAddress));
         //生成锁定脚本
         byte[] lockScript = new byte[0];
         try {
@@ -51,7 +54,7 @@ public class CreatRecord {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        System.out.println("32 " + lockScript.length);
+        System.out.println("32 lockScript is:" + lockScript.length+byteToString(lockScript));
         //向全节点根据pubkey查找顺序戳
         byte[] orderStampAndTime;
         try {
@@ -60,16 +63,21 @@ public class CreatRecord {
             System.out.println("error in order stamp or time");
             return;
         }
-        byte []orderStamp=new byte[4];
-        System.arraycopy(orderStampAndTime,0,orderStamp,0,4);
-        orderStamp=intToByte(byteToInt(orderStamp)+1);
-        System.out.println("4 " + orderStamp.length);
+        byte state= (byte) i;
+        byte []orderStamp=new byte[3];
+        System.arraycopy(orderStampAndTime,0,orderStamp,0,orderStamp.length);
+        if (byteToInt(orderStamp)==0) {
+            System.out.println("error in creat record,user not exist");
+            return;
+        }
+        orderStamp=intTo3Byte(byteToInt(orderStamp)+1);
+        System.out.println("3 orderStamp is:" +byteToInt(orderStamp));
 
         //获取时间节点
         byte []time=new byte[4];
-        System.arraycopy(orderStampAndTime,4,time,0,4);
+        System.arraycopy(orderStampAndTime,orderStamp.length,time,0,time.length);
 //        byte[] time = intToByte(getSystemTime());
-        System.out.println("4 " + time.length);
+        System.out.println("4 time is:"+byteToInt(time));
         if (Arrays.equals(time,new byte[4])) {
             System.out.println("not exist");
             return;
@@ -77,8 +85,8 @@ public class CreatRecord {
         //生成解锁脚本
         byte[] unLockScript = null;
         try {
-            unLockScript = getUnlockScript(publicKey, privateKey, macAddress, orderStamp, time);
-            System.out.println(unLockScript.length);
+            unLockScript = getUnlockScript(publicKey, privateKey, macAddress,state, orderStamp, time);
+            System.out.println("unlockScript is:"+byteToString(unLockScript));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -86,10 +94,11 @@ public class CreatRecord {
         Record record = new Record();
         record.setMac(macAddress);
         record.setTime(time);
+        record.setState(state);
         record.setOrderStamp(orderStamp);
         record.setLockScript(lockScript);
         record.setUnLockScript(unLockScript);
-        System.out.println(record);
+        System.out.println("record info is:\n"+record);
         Socket socket = null;
         OutputStream out = null;
         InputStream in = null;
@@ -125,7 +134,7 @@ public class CreatRecord {
 
     public static void main(String[] args) {
         CreatRecord creatRecord = new CreatRecord();
-        creatRecord.start();
+        creatRecord.start(0,null);
     }
 
     private byte[] getOrderStampAndTime(byte[] lockScrpit) throws IOException {
@@ -134,7 +143,7 @@ public class CreatRecord {
         InputStream in=socket.getInputStream();
         out.write(QUERYSTAMPANDTIME);
         out.write(lockScrpit);
-        byte orderStamp[] = new byte[4];
+        byte orderStamp[] = new byte[3];
         in.read(orderStamp);
         byte time[]=new byte[4];
         in.read(time);
@@ -143,17 +152,18 @@ public class CreatRecord {
 //        if (tem == 0)
 //            System.out.println("order Stamp 查询失败");
 //        tem++;
-        byte []orderAndTime=new byte[8];
-        System.arraycopy(orderStamp,0,orderAndTime,0,4);
-        System.arraycopy(time,0,orderAndTime,4,4);
+        byte []orderAndTime=new byte[7];
+        System.arraycopy(orderStamp,0,orderAndTime,0,orderStamp.length);
+        System.arraycopy(time,0,orderAndTime,orderStamp.length,time.length);
         return orderAndTime;
     }
 
-    private byte[] getUnlockScript(ECPublicKeyImpl publicKey, ECPrivateKeyImpl privateKey, byte[] macAddress, byte[] orderStamp, byte[] time) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        byte[] tem = new byte[macAddress.length + orderStamp.length + time.length];
+    private byte[] getUnlockScript(ECPublicKeyImpl publicKey, ECPrivateKeyImpl privateKey, byte[] macAddress,byte state, byte[] orderStamp, byte[] time) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        byte[] tem = new byte[macAddress.length +1+ orderStamp.length + time.length];
         System.arraycopy(macAddress, 0, tem, 0, macAddress.length);
-        System.arraycopy(orderStamp, 0, tem, macAddress.length, orderStamp.length);
-        System.arraycopy(time, 0, tem, macAddress.length + orderStamp.length, time.length);
+        tem[macAddress.length]=state;
+        System.arraycopy(orderStamp, 0, tem, macAddress.length+1, orderStamp.length);
+        System.arraycopy(time, 0, tem, macAddress.length+1 + orderStamp.length, time.length);
         byte[] sha = MessageDigest.getInstance("SHA-256").digest(tem);
         Signature sign = Signature.getInstance("SHA1withECDSA", "SunEC");
         sign.initSign(privateKey);
@@ -211,8 +221,10 @@ public class CreatRecord {
         return null;
     }
 
-    private KeyPair getKeyPair() throws IOException, InvalidKeyException {
-        DataInputStream in = new DataInputStream(new FileInputStream("./key"));
+    private KeyPair getKeyPair(String path) throws IOException, InvalidKeyException {
+        if (path==null)
+            path="./key";
+        DataInputStream in = new DataInputStream(new FileInputStream(path));
         String first = in.readUTF();
         String second = in.readUTF();
         String third = in.readUTF();
@@ -227,21 +239,22 @@ public class CreatRecord {
     public Record registRecord(ECPublicKeyImpl publicKey, ECPrivateKeyImpl privateKey) throws NoSuchAlgorithmException {
         //获取mac地址
         byte[] macAddress = getMacAddress();
-        System.out.println(macAddress.length);
+//        System.out.println("set mac:"+byteToString(macAddress));
+        byte state=0;
         //向全节点根据pubkey查找顺序戳
-        byte[] orderStamp = new byte[4];
-        System.out.println("4 " + orderStamp.length);
+        byte[] orderStamp = new byte[3];
+//        System.out.println("set order stamp:"+byteToString(orderStamp));
         //获取时间节点
         byte[] time = intToByte(getTime());
-        System.out.println("4 " + time.length);
+//        System.out.println("set time:"+byteToString(time));
         //生成锁定脚本
         byte[] lockScript = getLockScript(publicKey);
-        System.out.println("32 " + lockScript.length);
+//        System.out.println("set lockScript:"+byteToString(lockScript));
         //生成解锁脚本
         byte[] unLockScript = null;
         try {
-            unLockScript = getUnlockScript(publicKey, privateKey, macAddress, orderStamp, time);
-            System.out.println(unLockScript.length);
+            unLockScript = getUnlockScript(publicKey, privateKey, macAddress,state, orderStamp, time);
+//            System.out.println("set unlockScript:"+byteToString(unLockScript));
         } catch (Exception e) {
             e.printStackTrace();
         }

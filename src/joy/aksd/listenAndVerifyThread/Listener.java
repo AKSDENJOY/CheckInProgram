@@ -7,6 +7,7 @@ import joy.aksd.coreThread.WriteBlock;
 import joy.aksd.data.Block;
 import joy.aksd.data.Record;
 import sun.security.ec.ECPublicKeyImpl;
+import usertest.verifyFunction;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -16,6 +17,7 @@ import java.security.*;
 import java.security.spec.ECPoint;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static joy.aksd.data.dataInfo.*;
 import static joy.aksd.data.protocolInfo.*;
@@ -75,7 +77,7 @@ class handleThread implements Runnable {
             switch (tag) {
                 case REGISTER://新用户注册进区块链
                     //admin
-                    System.out.println("register");
+                    System.out.println("receive regist record");
                     receive=new byte[4];
                     in.read(receive);
                     int ttl=byteToInt(receive);
@@ -84,6 +86,8 @@ class handleThread implements Runnable {
                     receive=new byte[byteToInt(receive)];
                     in.read(receive);
                     record = new Record(receive);
+                    System.out.println("regist record info:");
+                    System.out.println(record.toString());
                     if (ttl!=0)
                         dealRegistRecord(record,ttl);
                     this.socket.close();
@@ -98,6 +102,8 @@ class handleThread implements Runnable {
                     receive=new byte[byteToInt(receive)];
                     in.read(receive);
                     record = new Record(receive);
+                    System.out.println("record info:");
+                    System.out.println(record.toString());
                     if (ttl!=0)
                         dealRecord(record,ttl);
                     this.socket.close();
@@ -108,12 +114,12 @@ class handleThread implements Runnable {
                     this.socket.close();
                     break;
                 case QUERYSTAMPANDTIME://查询顺序戳
-                    System.out.println("orderstamp and time");
+                    System.out.println("query orderstamp and time");
                     sendOrderStampAndTime(in,out);
                     this.socket.close();
                     break;
                 case LINKTEST://测试链接
-                    System.out.println("test link");
+                    System.out.println("usertest link");
                     break;
                 case SELFQUERY://查询个人记录
                     System.out.println("query self informaiton");
@@ -127,6 +133,7 @@ class handleThread implements Runnable {
                 case ADMINQUERY:
                     System.out.println("admin query");
                     startAdminQueryProcess(in,out);
+                    TimeUnit.SECONDS.sleep(1);
                     break;
                 case DOWNLOADBLOCK:
                     System.out.println("receive down request");
@@ -170,9 +177,9 @@ class handleThread implements Runnable {
 
     }
 
-    private void startReceiveBlockProcess(DataInputStream in, DataOutputStream out) throws IOException {
+    private void startReceiveBlockProcess(DataInputStream in, DataOutputStream out) throws IOException, NoSuchAlgorithmException {
         byte []receive=new byte[2];
-        System.out.println("receive a block,start process");
+//        System.out.println("receive a block,start process");
         try {
             in.read(receive);//读入区块长度
             receive=new byte[byteToInt(receive)];
@@ -182,68 +189,117 @@ class handleThread implements Runnable {
         }
         Block receivedBlock=new Block(receive);
 
-        System.out.println("receive block infomation:------");
+        System.out.println("received block infomation:------");
         System.out.println(receivedBlock.toString());
         System.out.println("------");
-        //区块累计难度更大，则为有效区块
-        if (byteToInt(receivedBlock.getCumulativeDifficulty())>byteToInt(blocks.getLast().getCumulativeDifficulty())) {
+        verifyFunction vf=new verifyFunction();
+        if (!vf.verifyNonce(receivedBlock)){
+            System.out.println("error block,nonce 验证不通过");
+            return;
+        }
 
-            //接到的区块比期待区块号大，启动同步工作
-            if (byteToInt(receivedBlock.getBlockNumber()) > byteToInt(blocks.getLast().getBlockNumber()) + 1) {
-                interuptCoreThread();
-                System.out.println("receive a higher block,interrupt core process");
-                try {
-                    out.write(0x02);
-                    SycnFromOthers(in, out);//同步
-                } catch (IOException e) {
-                    System.err.println("error in sync first connection");
-                }
-//            backUpChainClear();
-                reStartCoreThread();
-                System.out.println("restart core process");
-            }
-            //接到的区块为期待区块，
-            if (byteToInt(receivedBlock.getBlockNumber()) == byteToInt(blocks.getLast().getBlockNumber()) + 1) {
-                Block last = blocks.getLast();
-                System.out.println("reveive num is right");
-                if (Arrays.equals(receivedBlock.getLastHash(), getLastHash(last))) {//验证区块是否为连接
-                    out.write(0x01);
+        synchronized (blocks) {
+
+            //区块累计难度更大，则为有效区块
+            if (byteToInt(receivedBlock.getCumulativeDifficulty()) > byteToInt(blocks.getLast().getCumulativeDifficulty())) {
+
+                //接到的区块比期待区块号大，启动同步工作
+                if (byteToInt(receivedBlock.getBlockNumber()) > byteToInt(blocks.getLast().getBlockNumber()) + 1) {
                     interuptCoreThread();
-                    System.out.println("receive a expect block,now interrupt");
-
-                    synchronized (blocks) {
+                    System.out.println("receive a higher block,interrupt core process");
+                    try {
+                        out.write(0x02);
+                        SycnFromOthers(in, out);//同步
+                    } catch (IOException e) {
+                        System.err.println("error in sync first connection");
+                    }
+//            backUpChainClear();
+                    reStartCoreThread();
+                    System.out.println("restart core process");
+                }
+                //接到的区块为期待区块，
+                else if (byteToInt(receivedBlock.getBlockNumber()) == byteToInt(blocks.getLast().getBlockNumber()) + 1) {
+                    Block last = blocks.getLast();
+                    System.out.println("reveive expectblock");
+                    byte expectDiff=getExpectDiff(last);
+                    if (receivedBlock.getDifficulty()!=expectDiff){
+                        System.out.println("error block ,diffculty error");
+                        return;
+                    }
+                    if (Arrays.equals(receivedBlock.getLastHash(), getLastHash(last))) {//验证区块是否为连接
+                        out.write(0x01);
+                        interuptCoreThread();
+                        System.out.println("receive a expect block,now interrupt");
                         blocks.add(receivedBlock);
                         timeRecord.add(byteToInt(receivedBlock.getTime()));
                         num = byteToInt(blocks.getLast().getBlockNumber());
                         System.out.println("update blocks and timerecord now size is " + num);
+
+                        try {
+                            updatefewData(in);
+                        } catch (Exception e) {
+                            System.err.println("error in updatefewdata");
+                            ArrayList<Record> tem = new ArrayList<>();
+                            tem.addAll(unPackageRecord);
+                            tem.addAll(identifedRecord);
+                            unPackageRecord.clear();
+                            identifedRecord = tem;
+                        }
+                        System.out.println("start write received block");
+                        try {
+                            new WriteBlock(receivedBlock).start();
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                        System.out.println("start broad received block");
+                        try {
+                            new BroadcastBlock(receivedBlock).start();
+                        } catch (Exception e) {
+                            System.out.println("broadcast error ");
+                        }
+                        reStartCoreThread();
+                        System.out.println("restart ");
                     }
-                    try {
-                        updatefewData(in);
-                    } catch (Exception e) {
-                        System.err.println("error in updatefewdata");
-                        ArrayList<Record> tem = new ArrayList<>();
-                        tem.addAll(unPackageRecord);
-                        tem.addAll(identifedRecord);
-                        unPackageRecord.clear();
-                        identifedRecord = tem;
-                    }
-                    System.out.println("start write received block");
-                    try {
-                        new WriteBlock(receivedBlock).start();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                    System.out.println("start broad received block");
-                    try {
-                        new BroadcastBlock(receivedBlock).start();
-                    } catch (Exception e) {
-                        System.out.println("broadcast error ");
-                    }
-                    reStartCoreThread();
-                    System.out.println("restart ");
+                } else {
+                    System.out.println("error block");
                 }
+            } else {
+                System.out.println("error block");
             }
         }
+    }
+
+    private byte getExpectDiff(Block last) {
+        if ((byteToInt(last.getBlockNumber())+1)%10==0) {
+            int result=0;
+            ArrayList<Block> tem=new ArrayList<>();
+            ArrayList<Integer> timeList=new ArrayList<>();
+            tem.addAll(blocks);
+            int size=tem.size();
+            for (int i=1;i<=10;i++){
+                timeList.add(byteToInt(tem.get(size-i).getTime()));
+            }
+            for (int i=1;i<timeList.size();i++){
+                result+=(timeList.get(i)-timeList.get(i-1));
+            }
+            int avgTime=result/(timeList.size()-1);
+            byte Diff=last.getDifficulty();
+            if (avgTime>exceptTime+errorTime){
+                int i=Diff&0xff;
+                i-=1;
+                Diff= (byte) i;
+            }
+            if (avgTime<exceptTime-errorTime){
+                int i=Diff&0xff;
+                i+=1;
+                Diff= (byte) i;
+            }
+            return Diff;
+        }
+        else {
+            return last.getDifficulty();
+        }
+
     }
 
     private void updatefewData(DataInputStream in) throws IOException, ClassNotFoundException {
@@ -279,7 +335,8 @@ class handleThread implements Runnable {
 
     private void updateProgramData(DataInputStream in, DataOutputStream out) throws IOException, ClassNotFoundException {
         //freshRecord   identifedRecord  unPackageRecord indexBlock timeRecord
-        System.out.println("update data");
+        System.out.println("start update local data");
+        System.out.println("开始同步远程区块链");
 
         ObjectInputStream objectInputStream=new ObjectInputStream(in);
         LinkedList<Block> receiveblocks= (LinkedList<Block>) objectInputStream.readObject();
@@ -289,12 +346,12 @@ class handleThread implements Runnable {
         ArrayList<Long> temIndexBlock= (ArrayList<Long>) objectInputStream.readObject();
         ArrayList<Integer> temTimeRecord= (ArrayList<Integer>) objectInputStream.readObject();
 
-        System.out.println(receiveblocks.size());
-        System.out.println(temVerifyRecord2.toString());
-        System.out.println(temIdentifedRecord.toString());
-        System.out.println(temUnPackageRecord.toString());
-        System.out.println(temIndexBlock.size());
-        System.out.println(temTimeRecord.size());
+//        System.out.println(receiveblocks.size());
+//        System.out.println(temVerifyRecord2.toString());
+//        System.out.println(temIdentifedRecord.toString());
+//        System.out.println(temUnPackageRecord.toString());
+//        System.out.println(temIndexBlock.size());
+//        System.out.println(temTimeRecord.size());
 
         blocks.clear();
         blocks.addAll(receiveblocks);
@@ -324,6 +381,7 @@ class handleThread implements Runnable {
         try {
             updateProgramData(in,out);
         } catch (Exception e) {
+            e.printStackTrace();
             System.err.println("error in sync");
             System.exit(1);
         }
@@ -417,6 +475,7 @@ class handleThread implements Runnable {
                 recordToBeSent.add(identifedRecord.get(size-1-i));
             }
         }
+        System.out.println("admin query idebti size"+recordToBeSent.size());
         for (Record record:recordToBeSent){
             out.write(record.getBytesData());
         }
@@ -429,6 +488,7 @@ class handleThread implements Runnable {
                 recordToBeSent.add(unPackageRecord.get(size-1-i));
             }
         }
+        System.out.println("admin query unpack size"+recordToBeSent.size());
         for (Record record:recordToBeSent){
             out.write(record.getBytesData());
         }
@@ -462,6 +522,8 @@ class handleThread implements Runnable {
                 out.write(cacheRecord.get(cacheRecord.size()-1-j).getBytesData());
             }
             cacheRecord.clear();
+            byte[] close=new byte[2];
+            out.write(close);
         }
         //再查硬盘 不查了 太耗性能
 
@@ -558,8 +620,8 @@ class handleThread implements Runnable {
         in.read(receive);
         String key=byteToString(receive);
         if (!freshRecord.containsKey(key)){
-            System.out.println("not exist");
-            out.write(new byte[8]);
+            System.out.println("user "+key+" not exist");
+            out.write(new byte[7]);
         }else {
             Record record = freshRecord.get(key);
             out.write(record.getOrderStamp());
@@ -580,11 +642,16 @@ class handleThread implements Runnable {
 
     public void dealRecord(Record record, int ttl){
         if (verifyScriptRecord(record)){
-            effectiveRecord.add(record);
-            System.out.println("handle one   "+ effectiveRecord.size());
+            synchronized (effectiveRecord) {
+                effectiveRecord.add(record);
+            }
+            System.out.println("effective record");
             //转发
-            System.out.println(this.socket.getRemoteSocketAddress().toString().split(":")[0]);
+//            System.out.println(this.socket.getRemoteSocketAddress().toString().split(":")[0]);
             new BroadcastRecord(record,(this.socket.getRemoteSocketAddress().toString().split(":")[0]).substring(1),ttl).start();
+        }
+        else {
+            System.out.println("record error,解锁脚本验证不通过");
         }
     }
 
@@ -593,12 +660,19 @@ class handleThread implements Runnable {
             String key=byteToString(record.getLockScript());
             if (!freshRecord.containsKey(key)) {
                 freshRecord.put(key, record);
-                System.out.println("already not exist");
+                synchronized (effectiveRecord) {
+                    effectiveRecord.add(record);
+                }
+                System.out.println("effective regist record");
+//                System.out.println("already not exist");
             }
             System.out.println(freshRecord.toString());
             System.out.println("register success start broadcast");
             //转发
             new BroadcastRecord(record,(this.socket.getRemoteSocketAddress().toString().split(":")[0]).substring(1),ttl,true).start();
+        }
+        else {
+            System.out.println("regist record error ，解锁脚本验证不通过");
         }
     }
 
@@ -622,6 +696,7 @@ class handleThread implements Runnable {
         //验证签名
         tem=new byte[14];
         byte [] mac=record.getMac();
+
         byte [] orderStamp=record.getOrderStamp();
         byte [] time=record.getTime();
         byte [] verifingSign=new byte[unLockScrpit.length-40];
@@ -631,7 +706,8 @@ class handleThread implements Runnable {
         System.arraycopy(unLockScrpit,20,y,0,20);
         System.arraycopy(unLockScrpit,40,verifingSign,0,verifingSign.length);
         System.arraycopy(mac,0,tem,0,6);
-        System.arraycopy(orderStamp,0,tem,6,4);
+        tem[mac.length]=record.getState();
+        System.arraycopy(orderStamp,0,tem,6+1,3);
         System.arraycopy(time,0,tem,10,4);
         temHash= digest.digest(tem);
         boolean result=false;

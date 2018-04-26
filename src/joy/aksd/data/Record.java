@@ -11,7 +11,8 @@ import static joy.aksd.tools.toString.byteToString;
  */
 public class Record implements Serializable{
     private byte []mac;//6字节
-    private byte []orderStamp;//4字节
+    private byte state;//1字节
+    private byte []orderStamp;//3字节
     private byte []time;//4
     private byte []lockScript;//32
     private byte []unLockScript;//80-100
@@ -22,17 +23,20 @@ public class Record implements Serializable{
         byte tem[]=new byte[6];
         System.arraycopy(bytes,0,tem,0,6);
         setMac(tem);
-        tem=new byte[4];
-        System.arraycopy(bytes,6,tem,0,4);
+        tem=new byte[1];
+        System.arraycopy(bytes,6,tem,0,1);
+        setState(tem[0]);
+        tem=new byte[3];
+        System.arraycopy(bytes,7,tem,0,3);
         setOrderStamp(tem);
         tem=new byte[4];
-        System.arraycopy(bytes,6+4,tem,0,4);
+        System.arraycopy(bytes,6+3+1,tem,0,4);
         setTime(tem);
         tem=new byte[32];
-        System.arraycopy(bytes,6+4+4,tem,0,32);
+        System.arraycopy(bytes,6+3+1+4,tem,0,32);
         setLockScript(tem);
-        tem=new byte[bytes.length-6-4-4-32];
-        System.arraycopy(bytes,6+4+4+32,tem,0,tem.length);
+        tem=new byte[bytes.length-6-3-1-4-32];
+        System.arraycopy(bytes,6+3+1+4+32,tem,0,tem.length);
         setUnLockScript(tem);
     }
 
@@ -78,15 +82,16 @@ public class Record implements Serializable{
     }
 
     public byte [] getBytesData(){
-        int i=mac.length+orderStamp.length+time.length+lockScript.length+unLockScript.length;
+        int i=mac.length+1+orderStamp.length+time.length+lockScript.length+unLockScript.length;
         byte result[]=new byte[2+i];
         byte tem[]=intToByte(i);
         System.arraycopy(tem,2,result,0,2);
         System.arraycopy(mac,0,result,2,mac.length);
-        System.arraycopy(orderStamp,0,result,2+mac.length,orderStamp.length);
-        System.arraycopy(time,0,result,2+mac.length+orderStamp.length,time.length);
-        System.arraycopy(lockScript,0,result,2+mac.length+orderStamp.length+time.length,lockScript.length);
-        System.arraycopy(unLockScript,0,result,2+mac.length+orderStamp.length+time.length+lockScript.length,unLockScript.length);
+        result[2+mac.length]=state;
+        System.arraycopy(orderStamp,0,result,2+mac.length+1,orderStamp.length);
+        System.arraycopy(time,0,result,2+mac.length+1+orderStamp.length,time.length);
+        System.arraycopy(lockScript,0,result,2+mac.length+1+orderStamp.length+time.length,lockScript.length);
+        System.arraycopy(unLockScript,0,result,2+mac.length+1+orderStamp.length+time.length+lockScript.length,unLockScript.length);
         return result;
     }
 
@@ -96,6 +101,15 @@ public class Record implements Serializable{
                 "mac=" + byteToString(mac) +
                 ", orderStamp=" + byteToInt(orderStamp) +
                 ", time=" + byteToInt(time) +
+                ",state=" +state+
                 '}';
+    }
+
+    public byte getState() {
+        return state;
+    }
+
+    public void setState(byte state) {
+        this.state = state;
     }
 }

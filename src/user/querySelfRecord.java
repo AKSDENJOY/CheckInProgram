@@ -14,6 +14,7 @@ import static joy.aksd.data.protocolInfo.SELFQUERY;
 import static joy.aksd.tools.readAndPrintData.printRecord;
 import static joy.aksd.tools.toByte.hexStringToByteArray;
 import static joy.aksd.tools.toInt.byteToInt;
+import static joy.aksd.tools.toString.byteToString;
 
 /**
  * Created by EnjoyD on 2017/5/15.
@@ -32,7 +33,7 @@ public class querySelfRecord {
         String tem=sc.nextLine().trim();
         sc.close();
         ip=tem;
-        System.out.println(ip);
+//        System.out.println(ip);
     }
 
     public void querySelfRecord(){
@@ -40,6 +41,8 @@ public class querySelfRecord {
         byte[] lockScript = null;
         try {
             lockScript=getLockScript();
+            System.out.println("查询者:"+byteToString(lockScript));
+            System.out.println("");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {

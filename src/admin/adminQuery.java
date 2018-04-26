@@ -4,6 +4,7 @@ import joy.aksd.data.Record;
 
 import java.io.*;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 //import static joy.aksd.data.dataInfo.PORT;
@@ -18,6 +19,7 @@ import static joy.aksd.tools.toString.byteToString;
  */
 public class adminQuery {
     private HashMap<String,String> lockSriptToName=new HashMap<>();
+    private HashMap<String,String> macToPlace=new HashMap<>();
     private static String ip;
     private static int port=49999;
     static {
@@ -36,8 +38,10 @@ public class adminQuery {
     public void start(){
         try {
             initName();
+            initPlace();
         } catch (IOException e) {
             System.out.println("init error");
+            System.exit(0);
         }
         Socket socket= null;
         ArrayList<Record> result=new ArrayList<>();
@@ -50,6 +54,8 @@ public class adminQuery {
                 while (true) {
                     byte[] tem = new byte[2];
                     int i=in.read(tem);
+                    if (i==0)
+                        break;
                     tem = new byte[byteToInt(tem)];
                     i=in.read(tem);
                     Record record=new Record(tem);
@@ -60,6 +66,7 @@ public class adminQuery {
                 }
             }catch (Exception e){
                 System.out.println("receive over");
+
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -75,6 +82,7 @@ public class adminQuery {
         System.out.println("search over");
         startClassifySearch(result);
     }
+
 
     private void printItems(){
         System.out.println("======================");
@@ -133,7 +141,7 @@ public class adminQuery {
                     }
                     System.out.println(name+": 的信息");
                     for (Record record:entry.getValue()){
-                        printRecord(record);
+                        adminprintRecord(record,macToPlace);
                     }
                     System.out.println("-------------------------------------");
                 }
@@ -147,6 +155,33 @@ public class adminQuery {
                 throw new NumberFormatException();
         }
         return false;
+    }
+
+    private void adminprintRecord(Record record, HashMap<String, String> macToPlace) {
+        System.out.print(record);
+        long time=(long)byteToInt(record.getTime());
+        System.out.print("时间 :"+new SimpleDateFormat("YYYY-MM-dd-EEEE HH:mm:ss").format(new Date(time*1000))+"  ");
+        int state=record.getState();
+        System.out.print("   记录类型:");
+        if (state==0)
+            System.out.print("注册");
+        else if (state==1)
+            System.out.print("签到");
+        else if (state==2)
+            System.out.print("签退");
+        System.out.print("   生成电脑:"+byteToString(record.getMac()));
+        System.out.println("  具体位置: "+macToPlace.get(byteToString(record.getMac())));
+    }
+
+
+    private void initPlace() throws FileNotFoundException {
+        Scanner sc=new Scanner(new File("./place"));
+        while (sc.hasNext()){
+            String mac=sc.nextLine().trim();
+            String place=sc.nextLine().trim();
+            macToPlace.put(mac,place);
+        }
+        sc.close();
     }
 
     private void initName() throws IOException {

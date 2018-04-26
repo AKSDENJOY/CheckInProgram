@@ -62,6 +62,7 @@ public class Main2 {
             recoverFromDisk();
         } catch (Exception e) {
             System.out.println("error in recover");
+//            System.exit(0);
 //            blocks.removeLast();
 //            timeRecord.remove(timeRecord.size()-1);
 //            return;
@@ -100,7 +101,7 @@ public class Main2 {
         //核心线程启动
         coreWork.execute(new coreProcess());
 
-        //region interupt test
+        //region interupt usertest
 //        try {
 //            TimeUnit.SECONDS.sleep(5);
 //        } catch (InterruptedException e) {
@@ -180,6 +181,7 @@ public class Main2 {
             index+=(2+tem.length);
             //复原区块
             Block block=new Block(tem);
+            System.out.println(byteToInt(block.getBlockNumber()));
             //添加区块缓存
             if (blocks.size()>cacheBlockCount)//缓存最近cacheBlockCount个区块
                 blocks.remove(0);
@@ -212,8 +214,8 @@ public class Main2 {
 
     public static void printInfo(){
         System.out.println("blocks size is "+blocks.size());
-        System.out.println("verify2 \n"+ freshRecord.toString());
-        System.out.println("verify1 \n"+ effectiveRecord.toString());
+        System.out.println("freshverify2 \n"+ freshRecord.size());
+        System.out.println("effectiveverify1 size \n"+ effectiveRecord.size());
     }
 //
 }

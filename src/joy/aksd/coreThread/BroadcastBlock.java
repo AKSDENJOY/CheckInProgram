@@ -29,8 +29,10 @@ public class BroadcastBlock {
     private void broadcast() {
         System.out.println("broadcast IPlist size"+IPList.size());
         for(String ip:IPList) {
-            if(!ip.equals(localIp))
+            if(!ip.equals(localIp)) {
+                System.out.println("broadcast to "+ip);
                 broadCastThread.execute(new broadCastThread(ip, this.block));
+            }
         }
 
         System.out.println("broadcast over");
@@ -96,11 +98,12 @@ class broadCastThread implements Runnable{
                 objectOutputStream.writeObject(indexBlock);
                 objectOutputStream.writeObject(timeRecord);
 
-                System.out.println(freshRecord.toString());
-                System.out.println(identifedRecord.toString());
-                System.out.println(unPackageRecord.toString());
-                System.out.println(indexBlock.size());
-                System.out.println(timeRecord.size());
+//                System.out.println(freshRecord.toString());
+//                System.out.println(identifedRecord.toString());
+//                System.out.println(unPackageRecord.toString());
+//                System.out.println(indexBlock.size());
+//                System.out.println(timeRecord.size());
+                System.out.println("传输完毕");
             }
             else if (tag[0] == 0x01){
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(out);

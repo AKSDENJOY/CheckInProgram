@@ -11,6 +11,13 @@ public class toByte {
         }
         return result;
     }
+    public static byte[] intTo3Byte(long i){
+        byte []result=new byte[3];
+        for (int j=0;j<3;j++){
+            result[j]= (byte) ((i>>(8*(2-j)))&0xff);//低下标存高位，高下标存低位 i为整数，因此可以不带符号位右移
+        }
+        return result;
+    }
 
     public static byte[]longToByte(long i){
         byte []result=new byte[8];

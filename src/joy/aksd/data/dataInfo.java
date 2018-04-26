@@ -40,6 +40,7 @@ public class dataInfo {
      * 验证完成后的记录池，用以创建默克尔树。
      */
     public static ArrayList<Record> identifedRecord=new ArrayList<>();
+
     /**
      * 打包生成区块时保存的记录
      */
@@ -54,7 +55,7 @@ public class dataInfo {
     /**
      * 区块能包含的最大条目数
      */
-    public static int merkleTreeLimitation=64;
+    public static int merkleTreeLimitation=400;
 
     public static MessageDigest SHA256x;
 

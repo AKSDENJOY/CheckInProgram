@@ -113,7 +113,7 @@ public class CreatBlock {
         for (byte[] tem : result) {
             System.arraycopy(tem, 0, BlockData, bytes, tem.length);
             bytes += tem.length;
-            System.out.println(Arrays.toString(tem));
+//            System.out.println(Arrays.toString(tem));
         }
         block.setData(BlockData);
         //开始计算merkle tree root

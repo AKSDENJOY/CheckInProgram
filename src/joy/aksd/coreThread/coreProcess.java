@@ -36,14 +36,6 @@ public class coreProcess implements Runnable{
                 System.out.println("pow 中断结束");
                 break;
             }
-            //广播区块
-            BroadcastBlock broadcastBlock = new BroadcastBlock(block);
-            try {
-                broadcastBlock.start();
-
-            }catch (Exception e){
-                System.out.println("broadcast error ");
-            }
             //写链中区块入硬盘
             WriteBlock writeBlock = new WriteBlock(block);
             try {
@@ -52,6 +44,14 @@ public class coreProcess implements Runnable{
             } catch (FileNotFoundException e) {
                 System.out.println("写入失败");
                 continue;
+            }
+            //广播区块
+            BroadcastBlock broadcastBlock = new BroadcastBlock(block);
+            try {
+                broadcastBlock.start();
+
+            }catch (Exception e){
+                System.out.println("broadcast error ");
             }
             System.out.println(block);
         }

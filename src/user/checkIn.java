@@ -24,7 +24,33 @@ public class checkIn {
             System.out.println("error in network please check the net connection");
             return;
         }
-        new CreatRecord().start();
+        new CreatRecord().start(1,null);
+    }
+    public static void startCheckIn(String path){
+        //检查连接
+        Socket socket= null;
+        try {
+            socket = new Socket(ROOTIP,PORT);
+            socket.getOutputStream().write(LINKTEST);
+            socket.close();
+        } catch (IOException e) {
+            System.out.println("error in network please check the net connection");
+            return;
+        }
+        new CreatRecord().start(1,path);
+    }
 
+    public static void startCheckOut(String path){
+        //检查连接
+        Socket socket= null;
+        try {
+            socket = new Socket(ROOTIP,PORT);
+            socket.getOutputStream().write(LINKTEST);
+            socket.close();
+        } catch (IOException e) {
+            System.out.println("error in network please check the net connection");
+            return;
+        }
+        new CreatRecord().start(2,path);
     }
 }
