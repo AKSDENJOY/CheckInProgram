@@ -522,8 +522,6 @@ class handleThread implements Runnable {
                 out.write(cacheRecord.get(cacheRecord.size()-1-j).getBytesData());
             }
             cacheRecord.clear();
-            byte[] close=new byte[2];
-            out.write(close);
         }
         //再查硬盘 不查了 太耗性能
 

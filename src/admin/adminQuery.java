@@ -72,7 +72,7 @@ public class adminQuery {
     }
 
     private void receiveRecord(ArrayList<Record> result, InputStream in) throws IOException {
-        byte []buff=new byte[1024];
+        byte []buff=new byte[10240];
         byte []tem;
         int AllLength=0;
         ArrayList<byte[]> Allbytes=new ArrayList<>();
@@ -97,7 +97,15 @@ public class adminQuery {
         while (count<all.length){
             System.arraycopy(all,count,recordLength,0,recordLength.length);
             int length=byteToInt(recordLength);
+            if (length==0){
+                System.out.println(Arrays.toString(recordLength));
+                System.out.println("break");
+//                System.out.println(Arrays.toString(all));
+                break;
+            }
             count+=recordLength.length;
+            System.out.println(length);
+
             data=new byte[length];
             System.arraycopy(all,count,data,0,data.length);
             count+=data.length;
