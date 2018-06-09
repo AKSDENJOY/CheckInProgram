@@ -16,9 +16,7 @@ public class verifyThread extends Thread{
         while (true) {
             Record record;
             try {
-                synchronized (effectiveRecord) {
-                    record = effectiveRecord.take();
-                }
+                record = effectiveRecord.take();
             } catch (InterruptedException e) {
                 return;
             }

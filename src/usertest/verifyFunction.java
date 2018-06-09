@@ -13,6 +13,8 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 
+import static joy.aksd.coreThread.powModule.getTarget;
+import static joy.aksd.coreThread.powModule.isRight;
 import static joy.aksd.tools.toInt.byteToInt;
 
 public class verifyFunction {
@@ -136,6 +138,7 @@ public class verifyFunction {
 
 
     }
+
     public void start() throws IOException, NoSuchAlgorithmException {
         DataInputStream in=new DataInputStream(new FileInputStream("./blockTest"));
         byte tem[];
@@ -198,62 +201,4 @@ public class verifyFunction {
     public static void main(String []arg) throws IOException, NoSuchAlgorithmException {
        new verifyFunction().start();
     }
-
-
-    private static boolean isRight(byte[] hash, byte[] target) {
-        for (int i = 0; i < target.length - 1; i++) {
-            if (hash[i] != target[i])
-                return false;
-        }
-        int temHash=hash[target.length-1]&0xff;
-        int temTarget=target[target.length-1]&0xff;
-
-        return temHash <= temTarget;
-
-    }
-
-    private static void init(byte[] target) {
-        for(int i=0;i<target.length;i++){
-            target[i]=0x00;
-        }
-    }
-    private static byte[] getTarget(byte difficulty) {
-        int num=difficulty&0xff;
-        int tem1=num/8;
-        int tem2=num%8;
-        byte[] target;
-        if (tem2==0){
-            target=new byte[tem1];
-            init(target);
-        }
-        else {
-            target=new byte[tem1+1];
-            init(target);
-            switch (tem2){
-                case 1:
-                    target[tem1]=0x7f;
-                    break;
-                case 2:
-                    target[tem1]=0x3f;
-                    break;
-                case 3:
-                    target[tem1]=0x1f;
-                    break;
-                case 4:
-                    target[tem1]=0x0f;
-                    break;
-                case 5:
-                    target[tem1]=0x07;
-                    break;
-                case 6:
-                    target[tem1]=0x03;
-                    break;
-                case 7:
-                    target[tem1]=0x01;
-                    break;
-            }
-        }
-        return target;
-    }
-
 }

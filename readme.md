@@ -1,1 +1,2 @@
-需要文件ip.txt设置连接的地址
+需要创建文件ip.txt设置连接的地址
+需要创建NTPServer.txt设置NTPserver地址

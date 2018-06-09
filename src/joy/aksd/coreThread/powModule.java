@@ -13,10 +13,22 @@ import static joy.aksd.tools.toInt.byteToInt;
  * Created by EnjoyD on 2017/4/10.
  */
 public class powModule {
+    /**
+     * 工作量证明模块开始接口
+     * @param block
+     * @throws NoSuchAlgorithmException
+     * @throws InterruptedException
+     */
     public void start(Block block) throws NoSuchAlgorithmException, InterruptedException {
         findNonceAndTime(block);
     }
 
+    /**
+     * pow寻找合理的time字段与nonce字段
+     * @param block
+     * @throws NoSuchAlgorithmException
+     * @throws InterruptedException
+     */
     public static void findNonceAndTime(Block block) throws NoSuchAlgorithmException, InterruptedException {
         byte target[]=getTarget(block.getDifficulty());
         byte[] lashHash=block.getLastHash();
@@ -64,7 +76,7 @@ public class powModule {
      * @param target 目标值
      * @return 正确与否
      */
-    private static boolean isRight(byte[] hash, byte[] target) {
+    public static boolean isRight(byte[] hash, byte[] target) {
         for (int i = 0; i < target.length - 1; i++) {
             if (hash[i] != target[i])
                 return false;
@@ -91,7 +103,7 @@ public class powModule {
      * @param difficulty 难度值
      * @return 难度前缀
      */
-    private static byte[] getTarget(byte difficulty) {
+    public static byte[] getTarget(byte difficulty) {
         int num=difficulty&0xff;
         int tem1=num/8;
         int tem2=num%8;
@@ -128,8 +140,6 @@ public class powModule {
             }
         }
         return target;
-
-
     }
 
     private static void init(byte[] target) {
@@ -137,35 +147,4 @@ public class powModule {
             target[i]=0x00;
         }
     }
-    //region usertest
-//    public static void main(String[] args) {
-//
-//        try {
-//            creatFirstBlock.start();
-//        } catch (NoSuchAlgorithmException e) {
-//            System.out.println("error on first");
-//        }
-//
-//        while (true) {
-//            CreatBlock creatBlock = new CreatBlock();
-//            Block block = null;
-//            try {
-//                block = creatBlock.start();
-//            } catch (NoSuchAlgorithmException e) {
-//                System.out.println("error on secone");
-//            }
-//
-//            powModule powModule = new powModule();
-//            try {
-//                powModule.start(block);
-//            } catch (NoSuchAlgorithmException e) {
-//                e.printStackTrace();
-//            }
-//            System.out.println(block);
-//            System.out.println("------");
-//        }
-//    }
-    //endregion
-
-
 }
