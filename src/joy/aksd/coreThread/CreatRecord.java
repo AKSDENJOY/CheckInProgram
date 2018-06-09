@@ -57,8 +57,9 @@ public class CreatRecord {
         System.out.println("32 lockScript is:" + lockScript.length+byteToString(lockScript));
         //向全节点根据pubkey查找顺序戳
         byte[] orderStampAndTime;
+        byte[] lastState=new byte[1];
         try {
-            orderStampAndTime = getOrderStampAndTime(lockScript);
+            orderStampAndTime = getOrderStampAndTimeAndState(lockScript,lastState);
         } catch (IOException e) {
             System.out.println("error in order stamp or time");
             return;
@@ -66,10 +67,11 @@ public class CreatRecord {
         byte state= (byte) i;
         byte []orderStamp=new byte[3];
         System.arraycopy(orderStampAndTime,0,orderStamp,0,orderStamp.length);
-        if (byteToInt(orderStamp)==0) {
-            System.out.println("error in creat record,user not exist");
-            return;
-        }
+        if (lastState[0] != 0)
+            if (byteToInt(orderStamp) == 0) {
+                System.out.println("error in creat record,user not exist");
+                return;
+            }
         orderStamp=intTo3Byte(byteToInt(orderStamp)+1);
         System.out.println("3 orderStamp is:" +byteToInt(orderStamp));
 
@@ -137,13 +139,14 @@ public class CreatRecord {
         creatRecord.start(0,null);
     }
 
-    private byte[] getOrderStampAndTime(byte[] lockScrpit) throws IOException {
+    private byte[] getOrderStampAndTimeAndState(byte[] lockScrpit, byte[] lastState) throws IOException {
         Socket socket=new Socket(ROOTIP,PORT);
         OutputStream out=socket.getOutputStream();
         InputStream in=socket.getInputStream();
         out.write(QUERYSTAMPANDTIME);
         out.write(lockScrpit);
         byte orderStamp[] = new byte[3];
+        in.read(lastState);
         in.read(orderStamp);
         byte time[]=new byte[4];
         in.read(time);

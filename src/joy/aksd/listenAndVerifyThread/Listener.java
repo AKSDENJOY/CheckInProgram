@@ -623,6 +623,7 @@ class handleThread implements Runnable {
             out.write(new byte[7]);
         } else {
             Record record = freshRecord.get(key);
+            out.write(record.getState());
             out.write(record.getOrderStamp());
             out.write(intToByte(getTime()));
         }
